@@ -26,9 +26,11 @@ export async function protectRoute(req, res, next) {
         const accessToken = req.cookies.accessToken;
 
         if (accessToken) {
-            const decoded = jwt.verify(accessToken, accessSecret);
-            if (decoded) {
+            let decoded;
+            try {
+                decoded = jwt.verify(accessToken, accessSecret);
                 const user = await User.findById(decoded.userId);
+
                 const fingerp = decoded.browserFingerPrint;
                 const fingerPrintMatch = fingerp == fingerprint;
 
@@ -39,6 +41,8 @@ export async function protectRoute(req, res, next) {
                 }
                 req.user = user;
                 return next();
+            } catch (e) {
+             //do nothing and send forward ....
             }
         }
 
@@ -49,28 +53,22 @@ export async function protectRoute(req, res, next) {
         if (!refreshToken) {
             return res.status(403).json({ message: "user logged out" });
         }
-
-        const decoded = jwt.verify(refreshToken, refreshSecret);
-
-        if (!decoded) {
-            res.clearCookie("accessToken", COOKIE_OPTIONS_2);
-            res.clearCookie("refreshToken", COOKIE_OPTIONS_1);
-            return res.status(403).json({ message: "user logged out" });
-        }
-
-        const sessionId = decoded.sessionId;
+        let decoded;
+        try {
+            decoded = jwt.verify(refreshToken, refreshSecret);
+            const sessionId = decoded.sessionId;
         const userId = decoded.userId;
 
         const sessions = await JSON.parse(await redis.get(userId));
         const session = sessions.find(s => s.sessionId === sessionId);
-        const expiry = session.expiresAt;
+        
 
         if (!session) {
             res.clearCookie("accessToken", COOKIE_OPTIONS_2);
             res.clearCookie("refreshToken", COOKIE_OPTIONS_1);
             return res.status(403).json({ message: "Invalid session. Logging out." });
         }
-
+        const expiry = session.expiresAt;
         if (session.expiresAt <= Date.now()) {
             res.clearCookie("accessToken", COOKIE_OPTIONS_2);
             res.clearCookie("refreshToken", COOKIE_OPTIONS_1);
@@ -134,6 +132,12 @@ export async function protectRoute(req, res, next) {
         }
         req.user = user;
         return next();
+        } catch (e) {
+            res.clearCookie("accessToken", COOKIE_OPTIONS_2);
+            res.clearCookie("refreshToken", COOKIE_OPTIONS_1);
+            return res.status(403).json({ message: "user logged out" });
+        }
+        
     } catch (e) {
         console.error(e);
         res.status(500).json({ message: "internal server error", success: false, e: e.message, e });

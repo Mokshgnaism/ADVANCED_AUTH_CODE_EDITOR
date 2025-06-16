@@ -290,3 +290,18 @@ export async function logout(req,res) {
         res.status(500).json({ message: "Internal server error", success: false, e: e.message });
     }
 }
+export async function sendotp(req,res) {
+    try {
+       const {email} = req.body;
+       const sent =  await sendOtp({email});
+       if(sent==1){
+        return res.status(201).json({message:"new otp sent",success:true});
+       }
+       if(sent==0||sent==-1){
+        return res.status(500).json({message:"internal server errors"})
+       }
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ message: "Internal server error", success: false, e: e.message });
+    }
+}
