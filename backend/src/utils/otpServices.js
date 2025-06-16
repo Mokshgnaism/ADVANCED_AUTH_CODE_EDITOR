@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
-import User from "../models/User";
-import redis from "../config/dbConnect";
+import User from "../models/User.js";
+import redis from "../config/dbConnect.js";
 import bcrypt from "bcryptjs";
 
 const user = process.env.MAIL_USER;

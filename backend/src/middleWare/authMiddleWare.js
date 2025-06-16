@@ -22,7 +22,7 @@ const COOKIE_OPTIONS_2 = {
 
 export async function protectRoute(req, res, next) {
     try {
-        const { fingerprint } = req.body;
+        const { fingerPrint } = req.body;
         const accessToken = req.cookies.accessToken;
 
         if (accessToken) {
@@ -32,9 +32,9 @@ export async function protectRoute(req, res, next) {
                 const user = await User.findById(decoded.userId);
 
                 const fingerp = decoded.browserFingerPrint;
-                const fingerPrintMatch = fingerp == fingerprint;
+                const fingerPrintMatch = fingerp == fingerPrint;
 
-                if (!fingerPrintMatch) {
+                if (fingerp!=fingerPrint) {
                     res.clearCookie("accessToken", COOKIE_OPTIONS_2);
                     res.clearCookie("refreshToken", COOKIE_OPTIONS_1);
                     return res.status(403).json({ message: "this token was not meant for the browser you are using.... logging out" });
@@ -51,7 +51,7 @@ export async function protectRoute(req, res, next) {
         const refreshToken = req.cookies.refreshToken;
 
         if (!refreshToken) {
-            return res.status(403).json({ message: "user logged out" });
+            return res.status(403).json({ message: "no user found",user:null,success:false});
         }
         let decoded;
         try {
@@ -81,11 +81,11 @@ export async function protectRoute(req, res, next) {
         const hashedFingerPrint = session.browserFingerPrint;
 
         const match1 = await bcrypt.compare(refreshToken, hashedRefreshToken);
-        const match2 = await bcrypt.compare(fingerprint, hashedFingerPrint);
-        const match3 = fingerprint == decoded.browserFingerPrint;
+        const match2 = await bcrypt.compare(fingerPrint, hashedFingerPrint);
+        const match3 = fingerPrint == decoded.browserFingerPrint;
 
-        //the refresh token stores plain fingerprint ... 
-        //session stores the hashed fingerprint 
+        //the refresh token stores plain fingerPrint ... 
+        //session stores the hashed fingerPrint 
         //user sends plain 
         //so we match three things -> (plain==refreshtoken.plain), compare(plain,session),compare(refreshtoken.plain,sessionhash) but the third is not necessary. since one and two take care of the third
         //and the fourth is comparing the refreshtoken associated with the current session. 
@@ -103,7 +103,7 @@ export async function protectRoute(req, res, next) {
         const newAccessToken = jwt.sign(
             {
                 userId,
-                browserFingerPrint: fingerprint,
+                browserFingerPrint: fingerPrint,
             },
             accessSecret,
             { expiresIn: "15m" }
@@ -111,7 +111,7 @@ export async function protectRoute(req, res, next) {
 
         res.cookie("accessToken", newAccessToken, COOKIE_OPTIONS_2);
 
-        const newRefreshToken = jwt.sign({userId,browserFingerPrint:fingerprint,sessionId},refreshSecret,{expiresIn:"7d"});
+        const newRefreshToken = jwt.sign({userId,browserFingerPrint:fingerPrint,sessionId},refreshSecret,{expiresIn:"7d"});
         const newHashedRefreshToken = await bcrypt.hash(newRefreshToken,10);
 
         const currentSession={
