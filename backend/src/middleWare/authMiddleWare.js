@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
-import redis from "../config/dbConnect";
-import User from "../models/User";
+import redis from "../config/dbConnect.js";
+import User from "../models/User.js";
 import jwt, { decode } from "jsonwebtoken";
 const accessSecret = process.env.ACCESS_SECRET;
 const refreshSecret = process.env.REFRESH_SECRET;

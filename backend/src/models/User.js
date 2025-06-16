@@ -1,4 +1,4 @@
-import { BarController } from "chart.js";
+
 import mongoose from "mongoose";
 
 const newUserSchema = mongoose.Schema({

@@ -22,6 +22,7 @@ export async function sendOtp(obj) {
             return false;
         }
         const otp = Math.floor(100000+Math.random()*900000);
+        console.log(otp);
         const stringotp = otp.toString();
         const hashedOtp = await bcrypt.hash(stringotp,10);
 
