@@ -33,7 +33,6 @@ export async function protectRoute(req, res, next) {
             return res.status(403).json({ message: "No refresh token found" });
         }
 
-        // 1. Try verifying access token first
         if (accessToken) {
             try {
                 console.log("Trying access token...");
