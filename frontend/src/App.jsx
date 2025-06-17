@@ -121,7 +121,7 @@ const App = () => {
         />
 
         <Route
-          path="/RoomInvitations"
+          path="/roomInvitations"
           element={
             isAuthenticated && isVerified ? (
               <Layout showSidebar={true}>

@@ -13,7 +13,7 @@ const Sidebar = () => {
         <Link to="/" className="flex items-center gap-2.5">
           <ShipWheelIcon className="size-9 text-primary" />
           <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary  tracking-wider">
-            Streamify
+            LiveColab 
           </span>
         </Link>
       </div>
@@ -59,19 +59,10 @@ const Sidebar = () => {
           <span>AddFriends</span>
         </Link>
 
-        <Link
-          to="/pastRooms"
-          className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
-            currentPath === "/pastRooms" ? "btn-active" : ""
-          }`}
-        >
-          <BellIcon className="size-5 text-base-content opacity-70" />
-          <span>PastRooms</span>
-        </Link>
           
 
             <Link
-          to="/RoomInvitations"
+          to="/roomInvitations"
           className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
             currentPath === "/RoomInvitations" ? "btn-active" : ""
           }`}
