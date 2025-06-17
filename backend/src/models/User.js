@@ -1,26 +1,27 @@
-
 import mongoose from "mongoose";
 
 const newUserSchema = mongoose.Schema({
-    name:{
-        type:String,
-        required:true,
-    },
-    email:{
-        type:String,
-        required:true,
-        unique:true,
-        trim: true,
-        lowercase: true
-    },
-    password:{
-        type:String,
-        required:true
-    },
-    isVerified:{
-        type:Boolean,
-        default:false
-    }
-},{timestamps:true});
+  name: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    required: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  friends: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  isVerified: {
+    type: Boolean,
+    default: false
+  }
+});
 
-export default mongoose.model("User",newUserSchema);
+const User = mongoose.model('User', newUserSchema);
+export default User;

@@ -97,7 +97,7 @@ export async function protectRoute(req, res, next) {
             if (!match1 || !match2 || !match3) {
                 const updatedSessions = sessions.filter(s => s.sessionId !== sessionId);
                 await redis.set(userId, JSON.stringify(updatedSessions));
-
+                
                 res.clearCookie("accessToken", COOKIE_OPTIONS_2);
                 res.clearCookie("refreshToken", COOKIE_OPTIONS_1);
                 return res.status(403).json({ message: "SCAM LOGIN DETECTED" });

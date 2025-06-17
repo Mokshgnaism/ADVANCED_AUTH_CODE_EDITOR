@@ -40,7 +40,7 @@ export async function signUp(req,res) {
         const sessionId = v4();
 
 
-        const hashedFingerPrint = await bcrypt.hash(fingerPrint,10);
+        const hashedFingerPrint = await bcrypt.hash(fingerPrint.toString(),10);
 
         const accessToken = jwt.sign({userId:newUser._id,browserFingerPrint:fingerPrint},accessSecret,{expiresIn:"15m"});
         const refreshToken = jwt.sign({userId:newUser._id,browserFingerPrint:fingerPrint,sessionId},refreshSecret,{expiresIn:"7d"});
@@ -65,7 +65,7 @@ export async function signUp(req,res) {
         return res.status(201).json({message:"successfully created user",returnUser,success:true});
     } catch (e) {
         const email = req.body.email;
-        await User.DeleteOne({email});
+        await User.deleteOne({email});
         console.error(e);
         res.status(500).json({message:"internal server error",success:false,e:e.message,e});
     }
@@ -275,7 +275,7 @@ export async function logout(req,res) {
             return res.status(200).json({ message: "Invalid or expired token", success: true });
         }
 
-        const sessions = await JSON.parse(await redis.get(user._id));
+        const sessions = await JSON.parse(await redis.get(user._id.toString()));
 
         if(!sessions){
              return res.status(200).json({ message: "Successfully logged out", success: true });
@@ -283,9 +283,9 @@ export async function logout(req,res) {
 
         const updatedSessions = sessions.filter(s=>s.sessionId!=decoded.sessionId);
 
-        await redis.set(user._id,JSON.stringify(updatedSessions));
+        await redis.set(user._id.toString(),JSON.stringify(updatedSessions));
         return res.status(200).json({ message: "Successfully logged out", success: true });
-
+                                                                        
     } catch (e) {
         console.error(e);
         res.status(500).json({ message: "Internal server error", success: false, e: e.message });
