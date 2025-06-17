@@ -6,10 +6,10 @@ router.use(protectRoute);
 
 
 router.post('/send-friend-request',sendFriendRequest);
-router.post('/accept-fiendrequest',acceptFriendRequest);
+router.post('/accept-friend-request',acceptFriendRequest);
 router.post('/get-friend-requests',getFriendRequests);
 router.post('/get-friends',getFriends);
-router.post('decline-friend-request',declineFriendRequest);
+router.post('/decline-friend-request',declineFriendRequest);
 router.post("/outgoing-friend-requests",getOutGoingFriendRequests);
 
 router.post('/getsuggestions',getSuggestions);

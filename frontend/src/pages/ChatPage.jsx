@@ -1,115 +1,88 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router";
-import useAuthUser from "../hooks/useAuthUser";
-import { useQuery } from "@tanstack/react-query";
-import { getStreamToken } from "../lib/api";
+import React, { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import { io } from "socket.io-client";
 
-import {
-  Channel,
-  ChannelHeader,
-  Chat,
-  MessageInput,
-  MessageList,
-  Thread,
-  Window,
-} from "stream-chat-react";
-import { StreamChat } from "stream-chat";
-import toast from "react-hot-toast";
+export default function ChatPage({ userId }) {
+  const { id: friendId } = useParams();
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const roomIdRef = useRef("");
+  const socketRef = useRef(null);
+  const endRef = useRef(null);
 
-import ChatLoader from "../components/ChatLoader";
-import CallButton from "../components/CallButton";
-
-const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
-
-const ChatPage = () => {
-  const { id: targetUserId } = useParams();
-
-  const [chatClient, setChatClient] = useState(null);
-  const [channel, setChannel] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const { authUser } = useAuthUser();
-
-  const { data: tokenData } = useQuery({
-    queryKey: ["streamToken"],
-    queryFn: getStreamToken,
-    enabled: !!authUser, // this will run only when authUser is available
-  });
+  const getRoomId = (a, b) => [a, b].sort().join("-");
 
   useEffect(() => {
-    const initChat = async () => {
-      if (!tokenData?.token || !authUser) return;
+    const roomId = getRoomId(userId, friendId);
+    roomIdRef.current = roomId;
 
-      try {
-        console.log("Initializing stream chat client...");
+    const socket = io("http://localhost:5002");
+    socketRef.current = socket;
+    socket.emit("join-chat", { roomId });
 
-        const client = StreamChat.getInstance(STREAM_API_KEY);
+    socket.on("chat-history", (history) => setMessages(history));
+    socket.on("receive-message", (msg) => setMessages((prev) => [...prev, msg]));
 
-        await client.connectUser(
-          {
-            id: authUser._id,
-            name: authUser.fullName,
-            image: authUser.profilePic,
-          },
-          tokenData.token
-        );
+    return () => socket.disconnect();
+  }, [userId, friendId]);
 
-        //
-        const channelId = [authUser._id, targetUserId].sort().join("-");
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-        // you and me
-        // if i start the chat => channelId: [myId, yourId]
-        // if you start the chat => channelId: [yourId, myId]  => [myId,yourId]
-
-        const currChannel = client.channel("messaging", channelId, {
-          members: [authUser._id, targetUserId],
-        });
-
-        await currChannel.watch();
-
-        setChatClient(client);
-        setChannel(currChannel);
-      } catch (error) {
-        console.error("Error initializing chat:", error);
-        toast.error("Could not connect to chat. Please try again.");
-      } finally {
-        setLoading(false);
-      }
+  const sendMessage = () => {
+    if (!input.trim()) return;
+    const msg = {
+      senderId: userId,
+      receiverId: friendId,
+      text: input,
+      timestamp: new Date().toISOString(),
     };
-
-    initChat();
-  }, [tokenData, authUser, targetUserId]);
-
-  const handleVideoCall = () => {
-    if (channel) {
-      const callUrl = `${window.location.origin}/call/${channel.id}`;
-
-      channel.sendMessage({
-        text: `I've started a video call. Join me here: ${callUrl}`,
-      });
-
-      toast.success("Video call link sent successfully!");
-    }
+    setMessages((prev) => [...prev, msg]);
+    socketRef.current.emit("send-message", { roomId: roomIdRef.current, message: msg });
+    setInput("");
   };
 
-  if (loading || !chatClient || !channel) return <ChatLoader />;
-
   return (
-    <div className="h-[93vh]">
-      <Chat client={chatClient}>
-        <Channel channel={channel}>
-          <div className="w-full relative">
-            <CallButton handleVideoCall={handleVideoCall} />
-            <Window>
-              <ChannelHeader />
-              <MessageList />
-              <MessageInput focus />
-            </Window>
+    <div className="flex flex-col h-screen">
+      {/* chat history */}
+      <div className="flex-1 bg-gray-100 p-4 overflow-y-auto space-y-2">
+        {messages.map((msg, idx) => (
+          <div
+            key={idx}
+            className={`flex flex-col ${
+              msg.senderId === userId ? "items-end" : "items-start"
+            }`}
+          >
+            <div
+              className={`p-2 rounded max-w-xs whitespace-pre-wrap ${
+                msg.senderId === userId ? "bg-blue-500 text-white" : "bg-gray-300 text-black"
+              }`}
+            >
+              <div>{msg.text}</div>
+              <div className="text-xs text-right opacity-60 mt-1">
+                {new Date(msg.timestamp).toLocaleTimeString()}
+              </div>
+            </div>
           </div>
-          <Thread />
-        </Channel>
-      </Chat>
+        ))}
+        <div ref={endRef} />
+      </div>
+
+      {/* input bar */}
+      <div className="p-4 bg-gray-800 flex">
+        <input
+          type="text"
+          placeholder="Type a message…"
+          className="input input-bordered flex-1 mr-2"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+        />
+        <button className="btn btn-primary" onClick={sendMessage}>
+          Send
+        </button>
+      </div>
     </div>
   );
-};
-export default ChatPage;
+}

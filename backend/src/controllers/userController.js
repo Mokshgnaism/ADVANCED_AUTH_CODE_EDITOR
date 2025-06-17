@@ -55,12 +55,12 @@ export async function sendFriendRequest(req, res) {
 export async function acceptFriendRequest(req, res) {
   try {
     const { friendRequestId } = req.body;
-
+    console.log("accept request hit ");
     const friendRequest = await Request.findById(friendRequestId);
     if (!friendRequest) {
       return res.status(404).json({ message: "Friend request not found" });
     }
-
+    
     const senderId = friendRequest.sender;
     const receiverId = friendRequest.receiver;
 
@@ -151,9 +151,8 @@ export async function getFriendRequests(req, res) {
 
 export async function getSuggestions(req,res){
     try {
-
+        console.log("tried to hit the get suggestiosn api ");
         const Friends = req.user.friends;
-        // const {searchText} = req.body;
         const excludeids = [...Friends,req.user._id];
         let query = {
             _id:{$nin:excludeids}
@@ -192,6 +191,7 @@ export async function getFriends(req,res){
     path: 'friends',
     select: 'name'
   });
+  console.log(userWithFriends)
 
 const friends = userWithFriends.friends;
   return res.status(200).json({friends,message:"success fetching friends"});
@@ -205,7 +205,7 @@ const friends = userWithFriends.friends;
 export async function getRoomInvitations(req, res) {
   try {
     const receiver = req.user._id;
-
+    console.log("hit the my invites route");
     const invitations = await Invite.find({
       receiver,
       expiresAt: { $gt: Date.now() }
@@ -318,22 +318,27 @@ export async function deleteRoom(req, res) {
 
 export async function sendRoomInvitation(req,res) {
     try {
+        console.log("hit the room invite api ");
         const sender = req.user._id;
-        const {receiver,roomId} = req.body;
+        const {friendId,roomId} = req.body;
+        const receiver = new mongoose.Types.ObjectId(friendId.toString());
+        console.log(receiver);
+        console.log(sender);
+        
         if(!sender||!receiver||!roomId){
             return res.status(502).json({message:"missing fields present"});
         }
 
-        const existingInvite = Invite.findOne({
+        const existingInvite = await Invite.findOne({
             sender,receiver,roomId
         })
 
         if(existingInvite &&existingInvite.expiresAt<Date.now()){
-            await existingInvite.findByIdAndDelete(existingInvite._id);
+            await Invite.findByIdAndDelete(existingInvite._id);
         }
-
-        if(existingInvite){
-            return res.staus(202).json({message:"invite exists"});
+        else if(existingInvite){
+           console.log("already existing invite...");
+            return res.status(202).json({message:"invite exists"});
         }
 
         const newInvite = Invite.create(({

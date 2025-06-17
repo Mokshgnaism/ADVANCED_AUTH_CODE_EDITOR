@@ -59,6 +59,15 @@ export async function getUserRooms() {
   console.log(fingerPrint);
   const response = await axiosInstance.post("/users/get-my-rooms",{fingerPrint});
   return response.data.rooms;
+
+ 
+}
+
+export async function getRoomInvites() {
+   const {fingerPrint} = await getFinger();
+  console.log(fingerPrint);
+  const response = await axiosInstance.post("/users/get-room-invites",{fingerPrint});
+  return response.data.invitations;
 }
 
 export async function deleteMyRoom(roomId) {
@@ -78,6 +87,13 @@ export async function getPastRooms() {
   console.log(fingerPrint);
   const response = await axiosInstance.post("/users/pastRooms",{fingerPrint});
   return response.data.rooms;
+}
+
+export async function sendRoomInvite({roomId, friendId}) {
+      const {fingerPrint} = await getFinger();
+      console.log("hit sent invite...")
+      const response = await axiosInstance.post("/users/send-room-invite",{roomId,friendId,fingerPrint});
+      return response.data;
 }
 
 // router.post("/get-my-rooms",getMyRooms);
@@ -111,8 +127,8 @@ export async function getFriendRequests() {
 }
 
 
-export async function acceptFriendRequest(receiverId) {
+export async function acceptFriendRequest(requestId) {
   const {fingerPrint} = await getFinger();
-  const response = await axiosInstance.put(`/users/accept-friend-request`,{fingerPrint,receiverId:userId});
+  const response = await axiosInstance.post(`/users/accept-friend-request`,{fingerPrint,friendRequestId:requestId});
   return response.data;
 }

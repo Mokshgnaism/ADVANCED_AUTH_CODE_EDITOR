@@ -14,6 +14,10 @@ import Layout from "./components/Layout.jsx";
 import { useThemeStore } from "./store/useThemeStore.js";
 import FriendPage from "./pages/friendPage.jsx";
 import AddFriendsPage from "../src/pages/AddFriendsPage.jsx"
+import PastRooms from "./pages/PastRooms.jsx";
+import RoomPage from "./pages/RoomPage.jsx";
+import RoomInvitationPage from "./pages/RoomIvitationPage.jsx";
+import ChatPage from "./pages/ChatPage.jsx";
 const App = () => {
   const { isLoading, authUser } = useAuthUser();
   const { theme } = useThemeStore();
@@ -63,12 +67,12 @@ const App = () => {
           }
         />
 
-         <Route
+        <Route
           path="/friends"
           element={
             isAuthenticated && isVerified ? (
               <Layout showSidebar={true}>
-                <FriendPage/>
+                <FriendPage />
               </Layout>
             ) : (
               <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
@@ -76,20 +80,88 @@ const App = () => {
           }
         />
 
-        
-         <Route
-          path="/addfriends"
+
+        <Route
+          path="/friends"
           element={
             isAuthenticated && isVerified ? (
               <Layout showSidebar={true}>
-                <AddFriendsPage/>
+                <FriendPage />
               </Layout>
             ) : (
               <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
             )
           }
         />
-        
+
+        <Route
+          path="/Room/:id"
+          element={
+            isAuthenticated && isVerified ? (
+              <Layout showSidebar={false}>
+                <RoomPage />
+              </Layout>
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+            )
+          }
+        />
+
+        <Route
+          path="/addFriends"
+          element={
+            isAuthenticated && isVerified ? (
+              <Layout showSidebar={true}>
+                <AddFriendsPage />
+              </Layout>
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+            )
+          }
+        />
+
+        <Route
+          path="/RoomInvitations"
+          element={
+            isAuthenticated && isVerified ? (
+              <Layout showSidebar={true}>
+                <RoomInvitationPage />
+              </Layout>
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+            )
+          }
+        />
+
+
+        <Route
+          path="/chat/:id"
+          element={
+            isAuthenticated && isVerified ? (
+                <ChatPage userId={authUser._id} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+
+
+
+
+
+        <Route
+          path="/pastRooms"
+          element={
+            isAuthenticated && isVerified ? (
+              <Layout showSidebar={true}>
+                <PastRooms />
+              </Layout>
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+            )
+          }
+        />
+
 
 
         <Route
