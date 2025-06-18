@@ -40,14 +40,13 @@ export async function signUp(req,res) {
         const sessionId = v4();
 
 
-        const hashedFingerPrint = await bcrypt.hash(fingerPrint,10);
+        const hashedFingerPrint = await bcrypt.hash(fingerPrint.toString(),10);
 
         const accessToken = jwt.sign({userId:newUser._id,browserFingerPrint:fingerPrint},accessSecret,{expiresIn:"15m"});
         const refreshToken = jwt.sign({userId:newUser._id,browserFingerPrint:fingerPrint,sessionId},refreshSecret,{expiresIn:"7d"});
 
         
-
-        const hashedRefreshToken = await bcrypt.hash(refreshToken,10);
+        const hashedRefreshToken = await bcrypt.hash(refreshToken.toString(),10);
 
         const sessions = [{
             sessionId,
@@ -56,7 +55,7 @@ export async function signUp(req,res) {
             expiresAt:Date.now()+7*24*60*60*1000
         }];
 
-        await redis.set(newUser._id,JSON.stringify(sessions));
+        await redis.set(newUser._id.toString(),JSON.stringify(sessions));
 
         res.cookie("accessToken",accessToken,COOKIE_OPTIONS_2);
         res.cookie("refreshToken",refreshToken,COOKIE_OPTIONS_1);
@@ -65,6 +64,8 @@ export async function signUp(req,res) {
 
         return res.status(201).json({message:"successfully created user",returnUser,success:true});
     } catch (e) {
+        const email = req.body.email;
+        await User.deleteOne({email});
         console.error(e);
         res.status(500).json({message:"internal server error",success:false,e:e.message,e});
     }
@@ -100,9 +101,9 @@ export async function login(req,res){
 
         
 
-        const hashedRefreshToken = await bcrypt.hash(refreshToken,10);
+        const hashedRefreshToken = await bcrypt.hash(refreshToken.toString(),10);
 
-        const sessionString = await redis.get(user._id);
+        const sessionString = await redis.get(user._id.toString());
         let sessions = await JSON.parse(sessionString);
 
         const s1 = {
@@ -120,7 +121,7 @@ export async function login(req,res){
         
         
 
-        await redis.set(user._id,JSON.stringify(sessions));
+        await redis.set(user._id.toString(),JSON.stringify(sessions));
 
         res.cookie("accessToken",accessToken,COOKIE_OPTIONS_2);
         res.cookie("refreshToken",refreshToken,COOKIE_OPTIONS_1);
@@ -190,7 +191,7 @@ export async function resetPassword(req,res) {
         const match = await verifyOtp({email,otp});
 
         if(match==1){
-            const newHashedPassword = await bcrypt.hash(newPassword,10);
+            const newHashedPassword = await bcrypt.hash(newPassword.toString(),10);
             await User.findByIdAndUpdate(user._id,{
                 password:newHashedPassword
             });
@@ -274,7 +275,7 @@ export async function logout(req,res) {
             return res.status(200).json({ message: "Invalid or expired token", success: true });
         }
 
-        const sessions = await JSON.parse(await redis.get(user._id));
+        const sessions = await JSON.parse(await redis.get(user._id.toString()));
 
         if(!sessions){
              return res.status(200).json({ message: "Successfully logged out", success: true });
@@ -282,9 +283,24 @@ export async function logout(req,res) {
 
         const updatedSessions = sessions.filter(s=>s.sessionId!=decoded.sessionId);
 
-        await redis.set(user._id,JSON.stringify(updatedSessions));
+        await redis.set(user._id.toString(),JSON.stringify(updatedSessions));
         return res.status(200).json({ message: "Successfully logged out", success: true });
-
+                                                                        
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ message: "Internal server error", success: false, e: e.message });
+    }
+}
+export async function sendotp(req,res) {
+    try {
+       const {email} = req.body;
+       const sent =  await sendOtp({email});
+       if(sent==1){
+        return res.status(201).json({message:"new otp sent",success:true});
+       }
+       if(sent==0||sent==-1){
+        return res.status(500).json({message:"internal server errors"})
+       }
     } catch (e) {
         console.error(e);
         res.status(500).json({ message: "Internal server error", success: false, e: e.message });
